@@ -7,12 +7,27 @@ function(bash script output)
 
 endfunction()
 
+function(bash_no script)
+    execute_process(
+        COMMAND bash -c "${script}"
+    )
+endfunction()
+
+function(echo input)
+    bash_no(
+        "echo '${input}' "
+    )
+endfunction()
+
 function(clear)
-    bash(
-        "         \
-            clear \
-        "
-        output
+    bash_no(
+        "clear"
+    )
+endfunction()
+
+function(sleep t)
+    bash_no(
+        "sleep ${t}"
     )
 endfunction()
 

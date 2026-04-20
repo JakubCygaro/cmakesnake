@@ -66,16 +66,54 @@ macro(update)
 
 endmacro()
 
+macro(check_parts)
+    set(elem 0)
+    set(check FALSE)
+
+    list(LENGTH snake elems)
+
+    while(${elem} LESS elems)
+        math(EXPR elem_1 "${elem} + 1")
+        list(GET snake ${elem} x)
+        list(GET snake ${elem_1} y)
+
+        if(${line_c} EQUAL ${y} AND ${col_c} EQUAL ${x})
+            set(check TRUE)
+        endif()
+
+        math(EXPR elem "${elem} + 2")
+    endwhile()
+endmacro()
+
 function(draw)
+    clear()
     set(snake ${SNAKE} PARENT_SCOPE)
     list(GET snake 0 x)
     list(GET snake 1 y)
-    message("HEAD: ${x} ${y}")
+    set(line_c 7)
+    while(${line_c} GREATER 0)
+        set(line "")
+        set(col_c 0)
+        while(${col_c} LESS 7)
+
+            check_parts()
+            if(${check})
+                string(APPEND line "X")
+            else()
+                string(APPEND line "=")
+            endif()
+
+            math(EXPR col_c "${col_c} + 1")
+        endwhile()
+        math(EXPR line_c "${line_c} - 1")
+        message("${line}")
+    endwhile()
 endfunction()
 
 
 while(NOT GAME_OVER)
     update()
     draw()
+    sleep("0.1s")
 endwhile()
 
