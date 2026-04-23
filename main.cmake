@@ -12,6 +12,7 @@ string(TIMESTAMP RNG_SEED "%H%M%S")
 set(SNAKE 4 4)
 set(FOOD 1 1)
 set(DIRECTION "RIGHT")
+set(SCORE 0)
 
 list(LENGTH SNAKE SNAKE_LEN)
 
@@ -23,6 +24,27 @@ function(wrap_pos val min max out)
     endif()
 
 endfunction()
+
+macro(check_head_body_collision)
+    set(collision FALSE)
+
+    set(elem 2)
+    list(LENGTH SNAKE elems)
+
+    while(${elem} LESS elems)
+        math(EXPR elem_1 "${elem} + 1")
+        list(GET SNAKE ${elem} elem_x)
+        list(GET SNAKE ${elem_1} elem_y)
+
+        # message("head(${x} ${y}) elem(${elem_x} ${elem_y})")
+        if(${y} EQUAL ${elem_y} AND ${x} EQUAL ${elem_x})
+            # message("CHUJ")
+            set(collision TRUE)
+        endif()
+
+        math(EXPR elem "${elem} + 2")
+    endwhile()
+endmacro()
 
 macro(check_eat)
     set(eated FALSE)
@@ -59,10 +81,17 @@ macro(move_snake)
         list(POP_BACK SNAKE) # remove last x
     else()
         scatter_food()
+        math(EXPR SCORE "${SCORE} + 1")
     endif()
+
 
     list(PREPEND SNAKE ${y})
     list(PREPEND SNAKE ${x})
+
+    check_head_body_collision()
+    if(${collision})
+        set(GAME_OVER YES)
+    endif()
 
 endmacro()
 
@@ -71,13 +100,13 @@ macro(update)
 
     if (current_key STREQUAL "q")
         set(GAME_OVER YES)
-    elseif(current_key STREQUAL "a")
+    elseif(current_key STREQUAL "a" AND NOT ${DIRECTION} STREQUAL "RIGHT")
         set(DIRECTION "LEFT")
-    elseif(current_key STREQUAL "d")
+    elseif(current_key STREQUAL "d" AND NOT ${DIRECTION} STREQUAL "LEFT")
         set(DIRECTION "RIGHT")
-    elseif(current_key STREQUAL "s")
+    elseif(current_key STREQUAL "s" AND NOT ${DIRECTION} STREQUAL "UP")
         set(DIRECTION "DOWN")
-    elseif(current_key STREQUAL "w")
+    elseif(current_key STREQUAL "w" AND NOT ${DIRECTION} STREQUAL "DOWN")
         set(DIRECTION "UP")
     endif()
 
@@ -157,9 +186,11 @@ function(draw)
 endfunction()
 
 
-while(NOT GAME_OVER)
+while(NOT ${GAME_OVER})
     update()
     draw()
+    message("SCORE: ${SCORE}")
     sleep("0.1s")
 endwhile()
+message("GAME OVER")
 
