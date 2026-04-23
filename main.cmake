@@ -2,11 +2,15 @@
 
 cmake_minimum_required(VERSION 3.80)
 include(extern.cmake)
+include(rng.cmake)
 
 set(GRID_SIZE 8)
 set(GAME_OVER NO)
+set(RNG_SEED 69420)
+string(TIMESTAMP RNG_SEED "%H%M%S")
 
 set(SNAKE 4 4)
+set(FOOD 1 1)
 set(DIRECTION "RIGHT")
 
 list(LENGTH SNAKE SNAKE_LEN)
@@ -19,6 +23,17 @@ function(wrap_pos val min max out)
     endif()
 
 endfunction()
+
+macro(check_eat)
+    set(eated FALSE)
+
+    list(GET FOOD 0 food_x)
+    list(GET FOOD 1 food_y)
+
+    if(${y} EQUAL ${food_y} AND ${x} EQUAL ${food_x})
+        set(eated TRUE)
+    endif()
+endmacro()
 
 macro(move_snake)
     list(GET SNAKE 0 head_x)
@@ -38,8 +53,14 @@ macro(move_snake)
     wrap_pos(head_x 0 7 x)
     wrap_pos(head_y 0 7 y)
 
-    list(POP_BACK SNAKE) # remove last y
-    list(POP_BACK SNAKE) # remove last x
+    check_eat()
+    if(NOT ${eated})
+        list(POP_BACK SNAKE) # remove last y
+        list(POP_BACK SNAKE) # remove last x
+    else()
+        scatter_food()
+    endif()
+
     list(PREPEND SNAKE ${y})
     list(PREPEND SNAKE ${x})
 
@@ -66,6 +87,15 @@ macro(update)
 
 endmacro()
 
+macro(scatter_food)
+    lcg(${RNG_SEED} RNG_SEED)
+    math(EXPR _rx "${RNG_SEED} % 8")
+    list(INSERT FOOD 0 ${_rx})
+    lcg(${RNG_SEED} RNG_SEED)
+    math(EXPR _ry "${RNG_SEED} % 8")
+    list(INSERT FOOD 1 ${_ry})
+endmacro()
+
 macro(check_parts)
     set(elem 0)
     set(check FALSE)
@@ -85,9 +115,22 @@ macro(check_parts)
     endwhile()
 endmacro()
 
+
+macro(check_food_draw)
+    set(food_check FALSE)
+
+    list(GET food 0 food_x)
+    list(GET food 1 food_y)
+
+    if(${line_c} EQUAL ${food_y} AND ${col_c} EQUAL ${food_x})
+        set(food_check TRUE)
+    endif()
+endmacro()
+
 function(draw)
     clear()
     set(snake ${SNAKE} PARENT_SCOPE)
+    set(food ${FOOD} PARENT_SCOPE)
     list(GET snake 0 x)
     list(GET snake 1 y)
     set(line_c 7)
@@ -96,11 +139,14 @@ function(draw)
         set(col_c 0)
         while(${col_c} LESS 8)
 
+            check_food_draw()
             check_parts()
             if(${check})
                 string(APPEND line "X")
+            elseif(${food_check})
+                string(APPEND line "F")
             else()
-                string(APPEND line "=")
+                string(APPEND line " ")
             endif()
 
             math(EXPR col_c "${col_c} + 1")

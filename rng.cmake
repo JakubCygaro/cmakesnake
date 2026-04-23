@@ -1,0 +1,7 @@
+function (lcg seed rand)
+    set(a 75)
+    set(c 0)
+    set(m 65537)
+    math(EXPR _rand "(${a} * ${seed} + ${c}) % ${m}")
+    set(${rand} ${_rand} PARENT_SCOPE)
+endfunction()
